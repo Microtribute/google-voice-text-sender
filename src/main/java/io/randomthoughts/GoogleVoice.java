@@ -1,6 +1,10 @@
 package io.randomthoughts;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.Geolocation;
+
+import java.io.File;
+import java.nio.file.Paths;
 
 public class GoogleVoice implements AutoCloseable {
     private final User user;
@@ -9,57 +13,77 @@ public class GoogleVoice implements AutoCloseable {
 
     private final Page page;
 
+    private File userDataDirectory;
+
     public GoogleVoice(User user) {
         this.user = user;
 
-        var launchOptions = new BrowserType.LaunchOptions()
-                .setTimeout(0)
-                .setHeadless(false)
-                .setChannel("msedge")
-        ;
+        var launchOptions = new BrowserType.LaunchPersistentContextOptions()
+            .setTimeout(0)
+            .setHeadless(false)
+            .setScreenSize(1920, 1080)
+            .setBypassCSP(true)
+            .setJavaScriptEnabled(true);
 
-        var pageOptions = new Browser.NewPageOptions()
-                .setScreenSize(1920, 1080)
-        ;
+        userDataDirectory = Paths.get(System.getProperty("user.dir"), "userdata", user.getEmail()).toFile();
 
-        this.playwright = Playwright.create();
-        this.page = playwright
-                .chromium()
-                .launch(launchOptions)
-                .newPage(pageOptions)
-        ;
+        if (!userDataDirectory.exists()) {
+            var ignored = userDataDirectory.mkdirs();
+        }
+
+        playwright = Playwright.create();
+
+        // Make sure you launch Firefox
+        page = playwright.firefox().launchPersistentContext(userDataDirectory.toPath(), launchOptions).pages().get(0);
     }
 
-    public void text(String text) {
+    public Message text(String phoneNumber, String text) {
         authenticate();
+
+        page.navigate("https://voice.google.com/u/0/messages");
+
+        // Click the "Send New Message" button
+        page.waitForSelector("div[gv-test-id=send-new-message]").click();
+
+        // Fill in the phone #
+        page.waitForSelector("input[gv-test-id=recipient-picker-input]").fill(phoneNumber);
+
+        // Choose the first item from the autocomplete menu
+        page.waitForSelector("section#contact-list > div").click();
+
+        // Fill in the text
+        page.waitForSelector("textarea[gv-test-id=gv-message-input]").fill(text);
+
+        // Wait for the send button to get enabled
+        Utils.pause(3);
+
+        // Click the Send button
+        page.waitForSelector("[gv-test-id=send_message]").click();
+
+        Utils.pause(5);
+
+        return new Message(user.getPhoneNumber(), phoneNumber, text);
     }
 
     private void authenticate() {
-        page.navigate("https://voice.google.com");
-        clickElement("a.signUpLink");
-        clickElement("input#identifierId").fill(user.getEmail());
-        clickElement("div#identifierNext button").click();
-        Utils.pause(10000);
-    }
+        page.navigate("https://voice.google.com/u/0/messages");
 
-    private ElementHandle clickElement(String selector) {
-        var element = page.waitForSelector(selector);
-
-        if (element != null) {
-            var box = element.boundingBox();
-            var x = box.x + Utils.random(box.width);
-            var y = box.y + Utils.random(box.height);
-            var steps = Utils.random(10);
-
-            page.mouse().move(x, y, new Mouse.MoveOptions().setSteps(steps));
-            element.click();
+        // This means the user has no previous session and needs to log in fresh
+        if (!page.url().equals("https://voice.google.com/u/0/messages")) {
+            page.waitForSelector("a.signUpLink").click();
+            page.waitForURL("https://accounts.google.com/v3/signin/identifier?*");
+            page.waitForSelector("input#identifierId").fill(user.getEmail());
+            page.waitForSelector("div#identifierNext button").click();
+            page.waitForURL("https://accounts.google.com/v3/signin/challenge/pwd?*");
+            page.waitForSelector("div#password input[type=password][name=Passwd]").fill(user.getPassword());
+            page.waitForSelector("div#passwordNext button").click();
+            page.waitForURL("https://voice.google.com/u/0/*");
         }
-
-        return element;
     }
 
     @Override
     public void close() {
-        this.playwright.close();
+        playwright.close();
+        // Utils.deleteFile(userDataDirectory);
     }
 }

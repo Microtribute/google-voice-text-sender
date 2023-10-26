@@ -1,18 +1,19 @@
 package io.randomthoughts;
 
-// Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
 public class Main {
     public static void main(String[] args) {
-        var quote = QuoteProvider.random();
-        var credentials = UserProvider.getUsers();
-        var gavin1 = credentials.get(0);
+        var users = UserProvider.getUsers();
+        var user1 = users.get(0);
+        var user2 = users.get(1);
 
-        System.out.println(quote);
-        System.out.println(gavin1);
+        try (var voice1 = new GoogleVoice(user1)) {
+            var msg = voice1.text(user2.getPhoneNumber(), QuoteProvider.random().toString());
+            System.out.printf("Message sent from %s to %s - %s\n", msg.from(), msg.to(), msg.text());
+        };
 
-        try (var googleVoice = new GoogleVoice(gavin1)) {
-            googleVoice.text(quote.toString());
+        try (var voice2 = new GoogleVoice(user2)) {
+            var msg = voice2.text(user1.getPhoneNumber(), QuoteProvider.random().toString());
+            System.out.printf("Message sent from %s to %s - %s\n", msg.from(), msg.to(), msg.text());
         };
     }
 }

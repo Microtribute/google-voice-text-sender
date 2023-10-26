@@ -13,8 +13,8 @@ public class QuoteProvider {
         var jsonFilePath = Paths.get(System.getProperty("user.dir"), "quotes.json");
 
         return Utils.ifNull(
-            Utils.readJsonFile(jsonFilePath, new TypeReference<ArrayList<Quote>>() {}),
-            List.of()
+            () -> Utils.readJsonFile(jsonFilePath, new TypeReference<ArrayList<Quote>>() {}),
+            List::of
         );
     }
 
