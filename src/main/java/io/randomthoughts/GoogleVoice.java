@@ -1,7 +1,6 @@
 package io.randomthoughts;
 
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.Geolocation;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -13,7 +12,7 @@ public class GoogleVoice implements AutoCloseable {
 
     private final Page page;
 
-    private File userDataDirectory;
+    private final File userDataDirectory;
 
     public GoogleVoice(User user) {
         this.user = user;

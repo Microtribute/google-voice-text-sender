@@ -1,7 +1,5 @@
 package io.randomthoughts;
 
-// Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
 public class Message {
     private final String from;
     private final String to;
@@ -13,15 +11,15 @@ public class Message {
         this.text = text;
     }
 
-    public String from() {
+    public String getFrom() {
         return from;
     }
 
-    public String to() {
+    public String getTo() {
         return to;
     }
 
-    public String text() {
+    public String getText() {
         return text;
     }
 }

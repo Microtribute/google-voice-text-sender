@@ -8,12 +8,12 @@ public class Main {
 
         try (var voice1 = new GoogleVoice(user1)) {
             var msg = voice1.text(user2.getPhoneNumber(), QuoteProvider.random().toString());
-            System.out.printf("Message sent from %s to %s - %s\n", msg.from(), msg.to(), msg.text());
+            System.out.printf("Message sent from %s to %s - %s\n", msg.getFrom(), msg.getTo(), msg.getText());
         };
 
         try (var voice2 = new GoogleVoice(user2)) {
             var msg = voice2.text(user1.getPhoneNumber(), QuoteProvider.random().toString());
-            System.out.printf("Message sent from %s to %s - %s\n", msg.from(), msg.to(), msg.text());
+            System.out.printf("Message sent from %s to %s - %s\n", msg.getFrom(), msg.getTo(), msg.getText());
         };
     }
 }
